@@ -5,6 +5,9 @@ import { RemixServer } from "remix";
 import type { EntryContext } from "remix";
 import { Response, Headers } from "@remix-run/node";
 
+import { DataloaderProvider } from "./dataloader/lib";
+import { createServerDataloader } from "./dataloader/server";
+
 let ABORT_DELAY = 10000;
 
 export default async function handleRequest(
@@ -13,16 +16,21 @@ export default async function handleRequest(
   responseHeaders: Headers,
   remixContext: EntryContext
 ) {
+  let dataloader = createServerDataloader(remixContext, request, {}, {});
+
   return new Promise((resolve) => {
     let didError = false;
     const { pipe, abort } = renderToPipeableStream(
-      <RemixServer context={remixContext} url={request.url} />,
+      <DataloaderProvider dataloader={dataloader}>
+        <RemixServer context={remixContext} url={request.url} />
+      </DataloaderProvider>,
       {
         onShellReady() {
           let body = new PassThrough();
           pipe(body);
 
-          responseHeaders.set("Content-Type", "text/html");
+          responseHeaders.set("Content-Type", "text/html; charset=UTF-8");
+          responseHeaders.set("Transfer-Encoding", "chunked");
 
           resolve(
             new Response(body, {

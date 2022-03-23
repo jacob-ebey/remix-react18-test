@@ -1,12 +1,27 @@
 import { lazy, Suspense } from "react";
 import { useSearchParams, useSubmit } from "remix";
 
+import { useLoader } from "~/dataloader/lib";
+import type { Post } from "~/routes/api/posts";
+
 let AppStore = lazy(() => import("~/components/app-store"));
 let PlayStore = lazy(() => import("~/components/play-store"));
+
+function SuspendedProfileInfo({ getPosts }: { getPosts: () => Post[] }) {
+  let posts = getPosts();
+
+  return (
+    <pre>
+      <code>{JSON.stringify(posts, null, 2)}</code>
+    </pre>
+  );
+}
 
 export default function React18Features() {
   let [searchParams] = useSearchParams();
   let submit = useSubmit();
+
+  let postsLoader = useLoader<Post[]>("routes/api/posts");
 
   let lazyComponent = searchParams.get("lazy");
 
@@ -73,6 +88,11 @@ export default function React18Features() {
             })()}
           </section>
         </div>
+      </Suspense>
+
+      <Suspense fallback="Loading Profile....">
+        <SuspendedProfileInfo getPosts={postsLoader.load} />
+        <postsLoader.Component />
       </Suspense>
     </div>
   );
