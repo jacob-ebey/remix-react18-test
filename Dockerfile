@@ -13,7 +13,7 @@ FROM base as deps
 WORKDIR /myapp
 
 ADD package.json yarn.lock ./
-RUN npm i -g yarn
+# RUN npm i -g yarn
 RUN yarn
 
 # Setup production node_modules
